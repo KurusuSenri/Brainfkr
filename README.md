@@ -1,30 +1,34 @@
-# brainfk_rrepl
-REPL for brainfk written in R
+# Brainfkr
+
+Interpreter and REPL for brainfk written in R.
+
+## Features
+
+-   Dynamic memory size
+-   Undo at anytime
+-   Repeat the same operator multiple times using a number prefix (except for `[` and `]`)
+-   Automatically expands memory by 16 cells when needed
+-   Each cell holds a value up to 256, with automatic wraparound on overflow
+
+![](./assets/images/demo_undo.png)
 
 ## Usage
 
 To interpret brainfk code:
 
-```R
+``` r
 source("main.R")
 code <- "your brainfk code goes here"
-brainfk(code)
+bfkr_interpret(code)
 ```
 
-![](./demo_interpret.png)  
+![](./assets/images/demo_interpret.png)
 
 To enter REPL:
 
-```R
+``` r
 source("main.R")
-repl()
+bfkr_repl()
 ```
 
-![](./demo_repl.png)  
-
-## Features
-
-- Dynamic memory size
-- Undo at anytime
-
-![](./demo_undo.png)
+![](./assets/images/demo_repl.png)

@@ -2,8 +2,9 @@
 init <- function() {
   ctx <- list(
     mem = integer(16),
-    ptr = 1,
-    pc = 1,
+    ptr = 1L,
+    pc = 1L,
+    rep = NA_integer_,
     ins = c(),
     jmp_tbl = integer(0),
     history = list()
@@ -14,14 +15,8 @@ init <- function() {
 # append new instructions to context and generate new jump table
 load_ins <- function(ctx, ins) {
   ins <- c(ctx$ins, ins)
-  ctx <- list(
-    mem = ctx$mem,
-    ptr = ctx$ptr,
-    pc = ctx$pc,
-    ins = ins,
-    jmp_tbl = gen_jmp_tbl(ins),
-    history = ctx$history
-  )
+  ctx$ins <- ins
+  ctx$jmp_tbl <- gen_jmp_tbl(ins)
   return(ctx)
 }
 
@@ -60,15 +55,24 @@ eval <- function(ctx) {
 
   while (ctx$pc <= length(ctx$ins)) {
     token <- ctx$ins[ctx$pc]
+    
+    if (token %in% as.character(0:9)) {
+      digit <- as.integer(token)
+      ctx$rep <- ifelse(is.na(ctx$rep), digit, ctx$rep * 10L + digit)
+      ctx$pc <- ctx$pc + 1L
+      next
+    }
+    
+    ctx$rep <- ifelse(is.na(ctx$rep), 1L, ctx$rep)
     ctx <- ops[[token]](ctx)
+    ctx$rep <- NA_integer_
   }
-
   return(ctx)
 }
 
 # tokenize input string to brainfk instructions
 tokenize_bf <- function(input_str) {
-  valid_tokens <- c(">", "<", "+", "-", ".", ",", "[", "]")
+  valid_tokens <- c(">", "<", "+", "-", ".", ",", "[", "]", as.character(0:9))
   raw_vec <- strsplit(input_str, "")[[1]]
   clean_vec <- raw_vec[raw_vec %in% valid_tokens]
   return(clean_vec)
@@ -116,20 +120,43 @@ dbg_print_mem <- function(ctx) {
   mem_len <- length(ctx$mem)
   num_row <- mem_len %/% cells
   cat("mem:\n")
+  
   for (row in 1:num_row) {
     cat(sprintf("[%04d] ", (row - 1) * cells))
-    for (col in 1:cells) {
-      cat(sprintf("%04d ", ctx$mem[(row - 1) * cells + col]))
-    }
-    cat(" | ")
+    
+    # number area
     for (col in 1:cells) {
       idx <- (row - 1) * cells + col
+      is_ptr <- (idx - 1) == ctx$ptr - 1L
+      val_str <- sprintf("%04d", ctx$mem[idx])
+      
+      if (is_ptr) {
+        cat(cli::bg_yellow(cli::col_black(val_str)))
+      } else {
+        cat(val_str)
+      }
+      cat(" ")
+    }
+    
+    cat(" | ")
+    
+    # ASCII area
+    for (col in 1:cells) {
+      idx <- (row - 1) * cells + col
+      is_ptr <- (idx - 1) == ctx$ptr - 1L
+      
       if (idx <= mem_len) {
         val <- ctx$mem[idx]
-        char <- if (val >= 32 && val <= 126) intToUtf8(val) else "."
-        cat(char)
+        char <- if (val >= 32 && val <= 126) intToUtf8(val) else " "
+        
+        if (is_ptr) {
+          cat(cli::bg_yellow(cli::col_black(char)))
+        } else {
+          cat(char)
+        }
       }
     }
+    
     cat("\n")
   }
 }
@@ -143,22 +170,10 @@ dbg_print_ins <- function(ctx) {
     cat("jmp_tbl:\n")
     return()
   }
-  cells <- 32
+
   cat("ins:\n")
-  num_rows <- ceiling(len / cells)
-  for (row in 1:num_rows) {
-    cat(sprintf("[%04d] ", (row - 1) * cells))
-    for (col in 1:cells) {
-      idx <- (row - 1) * cells + col
-      if (idx <= len) {
-        cat(ins_vec[idx])
-        if (col %% 4 == 0 && col < cells) {
-          cat(" ")
-        }
-      }
-    }
-    cat("\n")
-  }
+  cat(ctx$ins)
+  cat("\n")
 
   cat("jmp_tbl:\n")
   active_indices <- which(ctx$jmp_tbl != 0)

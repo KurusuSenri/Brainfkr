@@ -1,18 +1,20 @@
 list.files("R/", full.names = TRUE) |> sapply(source)
 
-interpret <- function(input_str) {
+bfkr_interpret <- function(input_str) {
   ctx <- init()
   ctx <- load_ins(ctx, tokenize_bf(input_str))
   ctx <- eval(ctx)
+  cat("\n---- END OF PROGRAM ----")
   dbg_print(ctx)
 }
 
-repl <- function() {
+bfkr_repl <- function() {
   ctx <- init()
   cat("[q]uit, [r]egisters, [i]nstructions, [p]rint_all, [u]ndo\n")
   while (TRUE) {
     input_str <- readline(">>> ")
     if (input_str == "q") {
+      cat("\n---- END OF PROGRAM ----")
       dbg_print(ctx)
       break
     } else if (input_str == "r") {
@@ -52,9 +54,3 @@ repl <- function() {
     }
   }
 }
-
-rrepl_helloworld <- "
-++++++++++[>+++++ +++++<-] ignoreabcdefg>++++.---.+++++ ++..+++.>>>+++[>+++++ +++++<-]
->++.<<<<+++++ +++.----- ---.+++.----- -.----- ---.>>+++++ +++
-++.++++
-"
