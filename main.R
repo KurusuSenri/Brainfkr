@@ -1,6 +1,9 @@
 list.files("R/", full.names = TRUE) |> sapply(source)
 
 bfkr_interpret <- function(input_str) {
+  if(chk_bkt_map(tokenize_bf(input_str)) != 0) {
+    stop("ummapped brackets")
+  }
   ctx <- init()
   ctx <- load_ins(ctx, tokenize_bf(input_str))
   ctx <- eval(ctx)
@@ -8,9 +11,9 @@ bfkr_interpret <- function(input_str) {
   dbg_print(ctx)
 }
 
-bfkr_repl <- function() {
+bfkr_repl <- function(always_print = TRUE) {
   ctx <- init()
-  cat("[q]uit, [r]egisters, [i]nstructions, [p]rint_all, [u]ndo\n")
+  cat("[q]uit, [r]egisters, [m]emory, [i]nstructions, [p]rint_all, [u]ndo\n")
   while (TRUE) {
     input_str <- readline(">>> ")
     if (input_str == "q") {
@@ -27,7 +30,9 @@ bfkr_repl <- function() {
       dbg_print(ctx)
     } else if (input_str == "u") {
       ctx <- load_history(ctx)
-      dbg_print(ctx)
+      if(always_print){
+        dbg_print(ctx)
+      }
     } else {
       ins <- tokenize_bf(input_str)
       if (length(ins) == 0) {
@@ -50,7 +55,9 @@ bfkr_repl <- function() {
       ctx <- save_history(ctx)
       ctx <- load_ins(ctx, ins)
       ctx <- eval(ctx)
-      dbg_print(ctx)
+      if(always_print){
+        dbg_print(ctx)
+      }
     }
   }
 }
